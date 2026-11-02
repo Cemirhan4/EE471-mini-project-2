@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice-Activated Library Inventory | EE471 Mini Project #2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="header">
+      <div class="header-main">
+        <div class="header-text">
+          <div class="project-tag">EE471 MINI PROJECT #2 &bull; AZURE SPEECH ACTIVATED</div>
+          <h1 class="logo-title">Library Inventory</h1>
+          <p class="logo-sub">Keep books and films moving through the community. Add new items, update details, or speak naturally using Azure Cognitive Speech Services.</p>
+        </div>
+
+        <!-- Voice Activation Hub -->
+        <div class="voice-hub" id="voice-hub">
+          <button id="mic-btn" class="mic-btn" title="Click to speak a library command">
+            <span class="mic-icon">🎙️</span>
+            <span class="mic-pulse"></span>
+          </button>
+          <div class="voice-info">
+            <div class="voice-badge" id="voice-badge">Ready to Listen</div>
+            <div class="voice-caption" id="voice-caption">Click mic or say <em>"Check out item 1"</em></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spoken Conversation Live Bubble -->
+      <div class="voice-speech-bubble" id="voice-bubble" style="display: none;">
+        <div class="bubble-row user-row">
+          <span class="bubble-tag user-tag">You Said</span>
+          <span class="bubble-text" id="bubble-user-text">...</span>
+        </div>
+        <div class="bubble-row librarian-row">
+          <span class="bubble-tag librarian-tag">Librarian</span>
+          <span class="bubble-text" id="bubble-librarian-text">...</span>
+        </div>
+        <audio id="librarian-audio" style="display: none;"></audio>
+      </div>
+
+      <!-- Quick Voice Shortcuts -->
+      <div class="voice-chips-bar">
+        <span class="chips-label">Quick Voice Commands:</span>
+        <div class="chips-scroll">
+          <button type="button" class="voice-chip" onclick="triggerVoiceShortcut('Create item, type book, title The Catcher in the Rye, author J.D. Salinger, pages 220')">
+            ➕ "Create item, type book..."
+          </button>
+          <button type="button" class="voice-chip" onclick="triggerVoiceShortcut('Check out item 1')">
+            📥 "Check out item 1"
+          </button>
+          <button type="button" class="voice-chip" onclick="triggerVoiceShortcut('Return item 1')">
+            🔄 "Return item 1"
+          </button>
+          <button type="button" class="voice-chip" onclick="triggerVoiceShortcut('Show available books')">
+            📖 "Show available books"
+          </button>
+          <button type="button" class="voice-chip" onclick="triggerVoiceShortcut('Show DVDs')">
+            💿 "Show DVDs"
+          </button>
+          <button type="button" class="voice-chip" onclick="triggerVoiceShortcut('Get item 2')">
+            ℹ️ "Get item 2"
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Notification / Error Display Area -->
+    <div id="notification-area" class="notification-area" style="display: none;">
+      <div class="notification-content">
+        <span class="notification-icon" id="notification-icon">⚠️</span>
+        <div class="notification-text">
+          <strong id="notification-title">Error</strong>
+          <span id="notification-message"></span>
+        </div>
+      </div>
+      <button class="notification-close" id="notification-close" aria-label="Close notification">&times;</button>
+    </div>
+
+    <!-- Main Grid Layout (Exact Week 4 Two-Column Structure) -->
+    <div class="main-layout">
+      
+      <!-- Left Column: Add / Edit Item Form -->
+      <aside class="panel add-panel">
+        <div class="section-tag" id="form-section-tag">NEW RECORD</div>
+        <h2 class="section-title" id="form-title">Add an item</h2>
+        <p class="section-desc" id="form-desc">Enter the details below to add it to the collection.</p>
+
+        <form id="item-form" class="item-form">
+          <input type="hidden" id="edit-item-id" value="">
+
+          <div class="form-group">
+            <label for="item-title">Title</label>
+            <input type="text" id="item-title" placeholder="e.g. The Left Hand of Darkness" required />
+          </div>
+
+          <div class="form-group">
+            <label for="item-author">Author or director</label>
+            <input type="text" id="item-author" placeholder="e.g. Ursula K. Le Guin" required />
+          </div>
+
+          <div class="form-group" id="type-group">
+            <label>Type</label>
+            <div class="segmented-control" id="type-selector">
+              <button type="button" class="segment active" data-type="book">Book</button>
+              <button type="button" class="segment" data-type="dvd">DVD</button>
+            </div>
+          </div>
+
+          <div class="form-group" id="dynamic-field-group">
+            <label for="item-metric" id="metric-label">Page count</label>
+            <div class="input-with-suffix">
+              <input type="number" id="item-metric" min="1" placeholder="320" required />
+              <span class="input-suffix" id="metric-suffix">pages</span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+              <span id="submit-btn-text">Add to library</span>
+              <svg class="btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="btn btn-secondary" id="cancel-edit-btn" style="display: none;">Cancel</button>
+          </div>
+        </form>
+      </aside>
+
+      <!-- Right Column: Catalog Listing -->
+      <section class="panel catalog-panel">
+        <div class="catalog-header">
+          <div>
+            <div class="section-tag">CATALOG</div>
+            <h2 class="catalog-count"><span id="item-count">0</span> items</h2>
+          </div>
+
+          <div class="catalog-filters">
+            <!-- Filter Pills -->
+            <div class="segmented-control pill-control">
+              <button class="filter-tab active" data-filter-type="all">All</button>
+              <button class="filter-tab" data-filter-type="book">Book</button>
+              <button class="filter-tab" data-filter-type="dvd">DVD</button>
+            </div>
+
+            <!-- Available Only Toggle -->
+            <label class="toggle-switch">
+              <input type="checkbox" id="available-toggle">
+              <span class="slider"></span>
+              <span class="toggle-label">Available only</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Items Container -->
+        <div id="items-list" class="items-list">
+          <div class="loading-state">Loading library collection...</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Environment variables (Azure keys - NEVER commit to git)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.venv
+env/
+venv/
+ENV/
+
+# Temporary and synthesized audio
+*.wav
+*.mp3
+static/audio/
+
+# Video deliverables
+*.avi
+*.mp4
+
+# OS
+.DS_Store
+Thumbs.db

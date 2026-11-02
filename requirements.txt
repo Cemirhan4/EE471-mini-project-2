@@ -1,0 +1,5 @@
+flask
+python-dotenv
+azure-cognitiveservices-speech
+gTTS
+SpeechRecognition
