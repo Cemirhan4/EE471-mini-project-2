@@ -100,19 +100,38 @@ def transcribe_audio_azure(audio_path):
 # NATURAL LANGUAGE COMMAND PARSER
 # ============================================================================
 
+WORD_TO_NUM = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+    'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+    'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+    'eighteen': '18', 'nineteen': '19', 'twenty': '20',
+    'thirty': '30', 'forty': '40', 'fifty': '50',
+    'first': '1', 'second': '2', 'third': '3', 'fourth': '4', 'fifth': '5',
+    'sixth': '6', 'seventh': '7', 'eighth': '8', 'ninth': '9', 'tenth': '10'
+}
+
+def normalize_spoken_text(text):
+    """Converts written number words (e.g. 'three') to digits ('3') and trims punctuation."""
+    t = text.lower()
+    t = re.sub(r'[\.\,\!\?]+', ' ', t)
+    for word, digit in WORD_TO_NUM.items():
+        t = re.sub(rf'\b{word}\b', digit, t)
+    return ' '.join(t.split())
+
 def parse_and_execute_voice_command(spoken_text):
     """
     Parses spoken voice command into library API actions as per Mini Project #2 specs.
     Returns: (spoken_response, http_status, extra_data)
     """
     raw = spoken_text.strip()
-    text = raw.lower()
-    print(f"[VOICE INGEST] Recognized: '{raw}'")
+    text = normalize_spoken_text(raw)
+    print(f"[VOICE INGEST] Raw: '{raw}' -> Normalized: '{text}'")
 
     # -------------------------------------------------------------
-    # 1. CHECKOUT ITEM: e.g. "Check out item 3" / "Checkout item 3"
+    # 1. CHECKOUT ITEM: e.g. "Check out item 3" / "Checkout three" / "Borrow 3"
     # -------------------------------------------------------------
-    match_checkout = re.search(r'(?:check\s*out|borrow)\s+(?:item|book|dvd)?\s*#?(\d+)', text)
+    match_checkout = re.search(r'(?:check\s*out|borrow)\s*(?:item|book|dvd|number|no\.?|#)?\s*#?(\d+)', text)
     if match_checkout:
         item_id = int(match_checkout.group(1))
         try:
@@ -126,9 +145,9 @@ def parse_and_execute_voice_command(spoken_text):
             return f"Sorry, item {item_id} is already checked out.", 409, {"error": "Already Checked Out"}
 
     # -------------------------------------------------------------
-    # 2. RETURN ITEM: e.g. "Return item 3"
+    # 2. RETURN ITEM: e.g. "Return item 3" / "Give back 3"
     # -------------------------------------------------------------
-    match_return = re.search(r'return\s+(?:item|book|dvd)?\s*#?(\d+)', text)
+    match_return = re.search(r'(?:return|give\s*back)\s*(?:item|book|dvd|number|no\.?|#)?\s*#?(\d+)', text)
     if match_return:
         item_id = int(match_return.group(1))
         try:
@@ -142,9 +161,9 @@ def parse_and_execute_voice_command(spoken_text):
             return f"Sorry, item {item_id} is not currently checked out.", 409, {"error": "Not Checked Out"}
 
     # -------------------------------------------------------------
-    # 3. DELETE ITEM: e.g. "Delete item 3" / "Remove item 3"
+    # 3. DELETE ITEM: e.g. "Delete item 3" / "Remove 3"
     # -------------------------------------------------------------
-    match_delete = re.search(r'(?:delete|remove)\s+(?:item|book|dvd)?\s*#?(\d+)', text)
+    match_delete = re.search(r'(?:delete|remove)\s*(?:item|book|dvd|number|no\.?|#)?\s*#?(\d+)', text)
     if match_delete:
         item_id = int(match_delete.group(1))
         try:
@@ -215,9 +234,9 @@ def parse_and_execute_voice_command(spoken_text):
             return response_msg, 201, {"action": "create", "item": new_item.to_dict()}
 
     # -------------------------------------------------------------
-    # 5. GET ITEM DETAILS: e.g. "Get item 1" / "Show item 1"
+    # 5. GET ITEM DETAILS: e.g. "Get item 1" / "Show item 1" / "Get 3"
     # -------------------------------------------------------------
-    match_get = re.search(r'(?:get|show|details\s+for|what\s+is)\s+(?:item|book|dvd)?\s*#?(\d+)', text)
+    match_get = re.search(r'(?:get|show|details\s+for|what\s+is|info\s+on)\s*(?:item|book|dvd|number|no\.?|#)?\s*#?(\d+)', text)
     if match_get:
         item_id = int(match_get.group(1))
         try:
